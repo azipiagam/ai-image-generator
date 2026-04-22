@@ -59,6 +59,16 @@ const FontStyle = () => (
 );
 
 const F = { fontFamily:"'Sora',sans-serif" };
+function authFetch(url, options = {}) {
+  const token = localStorage.getItem("fl_token");
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+    },
+  });
+}
 
 const IMG_H          = 180;
 const CARD_H         = 390;
@@ -430,14 +440,14 @@ export default function Gallery() {
   };
 
   const _doDelete = async (id) => {
-    try { await fetch(`/api/gallery/${encodeURIComponent(id)}`, { method:"DELETE" }); }
+    try { await authFetch(`/api/gallery/${encodeURIComponent(id)}`, { method:"DELETE" }); }
     catch (e) { console.error("Delete failed:", e); }
     setGallery(g => g.filter(i => i.id !== id));
     setSelectedIds(s => { const n = new Set(s); n.delete(id); return n; });
   };
 
   const _doClearAll = async () => {
-    try { await fetch("/api/gallery", { method:"DELETE" }); }
+    try { await authFetch("/api/gallery", { method:"DELETE" }); }
     catch (e) { console.error("Clear all failed:", e); }
     setGallery([]);
     setSelectedIds(new Set());
@@ -446,7 +456,7 @@ export default function Gallery() {
 
   const _doDeleteSelected = async () => {
     try {
-      await fetch("/api/gallery/bulk", {
+      await authFetch("/api/gallery/bulk", {
         method:"DELETE",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ ids:[...selectedIds] }),
