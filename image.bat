@@ -1,7 +1,7 @@
 @echo off
 title Backend AI Image Generator
 
-cd /d "C:\AI IMAGE GENERATOR\backend_ai"
+cd /d "C:\ai-image-generator\backend_ai"
 
 echo Menjalankan FastAPI Backend...
 echo ===============================
