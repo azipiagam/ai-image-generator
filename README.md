@@ -81,7 +81,7 @@ source venv/bin/activate
 
 #### Install dependencies
 ```bash
-pip install -r requirements.txt
+pip install -r app/requirements.txt
 ```
 
 #### Setup environment variables
