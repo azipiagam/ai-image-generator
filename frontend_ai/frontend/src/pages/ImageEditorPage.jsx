@@ -1304,7 +1304,7 @@ export default function ImageEditorPage() {
       setResultUrl(results[0]?.imageUrl || "");
       setSuccess(
         files.length === 1 && batchCount > 1
-          ? `Berhasil generate ${results.length} gambar dari 1 upload.`
+          ? `Berhasil generate ${results.length} gambar.`
           : results.length > 1
           ? `Batch ${results.length} gambar berhasil diproses.`
           : "Gambar berhasil diproses."
@@ -1655,7 +1655,7 @@ export default function ImageEditorPage() {
                             "& .MuiAlert-icon": { color: "#233971" },
                           }}
                         >
-                          <strong>{files.length}</strong> gambar dipilih{files.length === 1 ? " · batch 1-4 aktif" : " · multi upload aktif"}
+                          <strong>{files.length}</strong> gambar dipilih{files.length === 1 ? "" : " · multi upload aktif"}
                         </Alert>
                       )}
                     </Stack>
@@ -1686,7 +1686,7 @@ export default function ImageEditorPage() {
                       options: BATCH_OPTIONS,
                       icon: <LayersRoundedIcon sx={{ color: "#233971", mr: 1, fontSize: 18 }} />,
                       accentColor: "#233971",
-                      helper: isSingleSourceMode ? "1 upload bisa generate sampai 4 hasil" : "Saat multi upload, tiap file diproses 1 hasil",
+                      helper: isSingleSourceMode ? "" : "Saat multi upload, tiap file diproses 1 hasil",
                     },
                     {
                       label: "Aspect Ratio",
@@ -2274,3 +2274,4 @@ export default function ImageEditorPage() {
     </Box>
   );
 }
+
