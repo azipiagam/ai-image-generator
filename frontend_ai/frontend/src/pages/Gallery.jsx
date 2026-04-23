@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Box, Card, CardContent, Stack, Typography, Chip, Button,
   IconButton, Dialog, DialogContent, DialogTitle, TextField,
@@ -298,7 +298,18 @@ function WaterMark({ index }) {
 /* ── utils ── */
 function normalizeDateOnly(v) {
   if (!v) return "";
-  const d = new Date(v.replace(" ","T"));
+
+  if (v instanceof Date && !isNaN(v)) {
+    return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,"0")}-${String(v.getDate()).padStart(2,"0")}`;
+  }
+
+  if (typeof v === "string") {
+    const isoDateMatch = v.match(/\d{4}-\d{2}-\d{2}/);
+    if (isoDateMatch) return isoDateMatch[0];
+  }
+
+  const raw = typeof v === "string" ? v.replace(" ","T") : v;
+  const d = new Date(raw);
   if (isNaN(d)) return "";
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
@@ -312,12 +323,32 @@ function getDisplayPrompt(item) {
 /* ══════════════════ MAIN COMPONENT ══════════════════ */
 /* ── DatePickerBox: klik di mana saja → buka kalender (desktop & mobile) ── */
 function DatePickerBox({ label, value, onChange }) {
+  const inputId = useId();
+  const inputRef = useRef(null);
+
+  const openPicker = () => {
+    inputRef.current?.showPicker?.();
+    inputRef.current?.focus();
+  };
+
   return (
     <Box
+      component="label"
+      htmlFor={inputId}
+      onClick={openPicker}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openPicker();
+        }
+      }}
+      tabIndex={0}
       sx={{
         position:"relative",
         minWidth:{ xs:"100%", sm:200 },
         width:{ xs:"100%", sm:"auto" },
+        display:"block",
+        cursor:"pointer",
       }}
     >
       {/* Floating label — di atas segalanya */}
@@ -343,6 +374,8 @@ function DatePickerBox({ label, value, onChange }) {
 
       {/* Input overlay — di bawah display secara visual (zIndex:1) tapi full area klikable */}
       <input
+        id={inputId}
+        ref={inputRef}
         type="date"
         value={value}
         onChange={e => onChange(e.target.value)}
@@ -359,7 +392,7 @@ function DatePickerBox({ label, value, onChange }) {
           MozAppearance:"none",
           appearance:"none",
           boxSizing:"border-box",
-          zIndex:1,
+          zIndex:2,
           fontSize:"16px",
         }}
       />
@@ -379,7 +412,16 @@ function DatePickerBox({ label, value, onChange }) {
           px:"12px",
           height:52,
           pointerEvents:"none",
-          transition:"border-color 0.2s",
+          transition:"border-color 0.2s, box-shadow 0.2s, transform 0.2s",
+          ".MuiBox-root:hover > &":{
+            borderColor:"rgba(35,57,113,0.42)",
+            boxShadow:"0 10px 24px rgba(35,57,113,0.10)",
+            transform:"translateY(-1px)",
+          },
+          ".MuiBox-root:focus-visible > &":{
+            borderColor:"#233971",
+            boxShadow:"0 0 0 3px rgba(35,57,113,0.14)",
+          },
         }}
       >
         <CalendarMonthRoundedIcon sx={{ fontSize:18, color:"#5b7ec7", flexShrink:0 }}/>
