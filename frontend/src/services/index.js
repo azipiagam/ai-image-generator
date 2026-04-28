@@ -1,5 +1,5 @@
-export { default as Header } from '../templateComponents/Header.jsx'
-export { default as Sidebar } from '../templateComponents/Sidebar.jsx'
+export { default as Header } from '../components/Template/Header.jsx'
+export { default as Sidebar } from '../components/Template/Sidebar.jsx'
 
 export * from './authStorage.js'
 export * from './accessControl.js'

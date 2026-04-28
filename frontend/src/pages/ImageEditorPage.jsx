@@ -733,7 +733,7 @@ function FloatBadge({ icon, sx }) {
 /* ══════════════════════════════════════════════
    NEW ── Reference Image Upload Section
 ══════════════════════════════════════════════ */
-function ReferenceImageSection({ refFiles, refPreviews, onAdd, onRemove, onPreview, dragActiveRef, onDragOver, onDragLeave, onDrop, inputRef, F }) {
+function ReferenceImageSection({ refPreviews, onAdd, onRemove, onPreview, dragActiveRef, onDragOver, onDragLeave, onDrop, inputRef, F }) {
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.2}>
@@ -996,15 +996,13 @@ export default function ImageEditorPage() {
   const [batchCount, setBatchCount] = useState(1);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState("");
-  const [lightboxFile, setLightboxFile] = useState(null);
 
   // ── NEW: reference images state
   const [refFiles, setRefFiles] = useState([]);
   const [dragActiveRef, setDragActiveRef] = useState(false);
 
-  const openLightbox = (src, file = null) => {
+  const openLightbox = (src) => {
     setLightboxSrc(src);
-    setLightboxFile(file);
     setLightboxOpen(true);
   };
   const closeLightbox = () => setLightboxOpen(false);
@@ -1175,7 +1173,7 @@ export default function ImageEditorPage() {
 
   const saveToGallery = ({ imageUrl, promptText, originalFile }) => {
     try {
-      const old = JSON.parse(localStorage.getItem("generated_images_gallery") || "[]");
+      const old = JSON.parse(localStorage.getItem(" _images_gallery") || "[]");
       const item = {
         id: Date.now() + Math.floor(Math.random() * 10000),
         imageUrl,
@@ -1477,12 +1475,6 @@ export default function ImageEditorPage() {
               sx={{ position: "relative", zIndex: 1 }}
             >
               <Box>
-                <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "linear-gradient(135deg,#7a9bd4,#b8cbee)", boxShadow: "0 0 0 3px rgba(35,57,113,0.25)" }} />
-                  <Typography sx={{ ...F, fontWeight: 600, fontSize: "0.7rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#7a9bd4" }}>
-                    Powered by Artificial Intelligence
-                  </Typography>
-                </Stack>
                 <Typography
                   variant="h4"
                   sx={{
@@ -1491,7 +1483,7 @@ export default function ImageEditorPage() {
                     fontSize: { xs: "1.75rem", md: "2.2rem" },
                     lineHeight: 1.15,
                     color: "#f8fafc",
-                    mb: 1.5,
+                    mb: 0.5,
                     "& span": {
                       background: "linear-gradient(135deg,#7a9bd4,#5b7ec7,#b8cbee)",
                       WebkitBackgroundClip: "text",
@@ -1501,7 +1493,7 @@ export default function ImageEditorPage() {
                 >
                   AI Image <span>Editor</span>
                 </Typography>
-                <Typography sx={{ ...F, color: "rgba(226,232,240,0.82)", maxWidth: 560, lineHeight: 1.7, fontSize: "0.93rem" }}>
+                <Typography sx={{ ...F, display: "none", color: "rgba(226,232,240,0.82)", maxWidth: 560, lineHeight: 1.7, fontSize: "0.93rem" }}>
                   Workspace modern untuk marketplace & e-commerce — upload gambar, pilih preset, tulis prompt, atur batch, rasio, resolusi, dan generate hasil AI.
                 </Typography>
               </Box>

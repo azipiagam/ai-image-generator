@@ -1,14 +1,18 @@
-import { ChevronLeft, ChevronRight, XClose } from '@untitledui/icons'
 import { useEffect, useState } from 'react'
+import {
+  CloseRounded as CloseRoundedIcon,
+  KeyboardArrowLeftRounded as KeyboardArrowLeftRoundedIcon,
+  KeyboardArrowRightRounded as KeyboardArrowRightRoundedIcon,
+} from '@mui/icons-material'
 
-import './templateComponents.css'
+import '../../style/templateComponents.css'
 import {
   defaultNavigationPath,
   implementedNavigationPaths,
   primaryNavigationItems,
   secondaryNavigationItems,
-} from './navigation.js'
-import { submitLogout } from './logoutService.js'
+} from '../../services/navigation.js'
+import { submitLogout } from '../../services/logoutService.js'
 
 function getInitials(name) {
   return name
@@ -75,12 +79,14 @@ function SidebarNavItem({
   const content = (
     <>
       {Icon ? (
-        <Icon className="nav-icon" size={22} />
+        <Icon className="nav-icon" aria-hidden="true" />
       ) : (
         <span className="nav-item__bullet" aria-hidden="true" />
       )}
       <span className="nav-text">{item.label}</span>
-      {hasChildren ? <ChevronRight className="nav-item__chevron" size={18} /> : null}
+      {hasChildren ? (
+        <KeyboardArrowRightRoundedIcon className="nav-item__chevron" fontSize="small" />
+      ) : null}
     </>
   )
 
@@ -152,9 +158,9 @@ function SidebarNavItem({
 function Sidebar({
   collapsed = false,
   mobileOpen = false,
-  activePath = '/dashboard',
-  userName = 'Al fatih',
-  userRole = 'Frontend Developer',
+  activePath = '/',
+  userName = 'AI Image Generator',
+  userRole = 'Creative Workspace',
   primaryItems = primaryNavigationItems,
   secondaryItems = secondaryNavigationItems,
   onAction,
@@ -253,25 +259,25 @@ function Sidebar({
   return (
     <aside id="sidebar" className={sidebarClassName}>
       <button
-        type="button"
-        className="sidebar-toggle"
-        aria-label="Toggle Sidebar"
-        onClick={onToggleCollapse}
-      >
-        {collapsed ? (
-          <ChevronRight className="toggle-icon" size={16} />
-        ) : (
-          <ChevronLeft className="toggle-icon" size={16} />
-        )}
-      </button>
+      type="button"
+      className="sidebar-toggle"
+      aria-label="Toggle Sidebar"
+      onClick={onToggleCollapse}
+    >
+      {collapsed ? (
+        <KeyboardArrowRightRoundedIcon className="toggle-icon" fontSize="small" />
+      ) : (
+        <KeyboardArrowLeftRoundedIcon className="toggle-icon" fontSize="small" />
+      )}
+    </button>
 
       <button
-        type="button"
-        className="sidebar-mobile-dismiss"
-        aria-label="Close Sidebar"
-        onClick={onCloseMobile}
-      >
-        <XClose size={18} />
+      type="button"
+      className="sidebar-mobile-dismiss"
+      aria-label="Close Sidebar"
+      onClick={onCloseMobile}
+    >
+        <CloseRoundedIcon fontSize="small" />
       </button>
 
       <div className="sidebar-logo">
@@ -302,19 +308,21 @@ function Sidebar({
         ))}
       </nav>
 
-      <div className="sidebar-bottom">
-        {secondaryItems.map((item) => (
-          <SidebarNavItem
-            key={getItemKey(item)}
-            item={item}
-            selectedPath={selectedPath}
-            collapsed={collapsed}
-            onSelect={handleSelect}
-            expandedGroups={expandedGroups}
-            onToggleGroup={handleToggleGroup}
-          />
-        ))}
-      </div>
+      {secondaryItems.length > 0 ? (
+        <div className="sidebar-bottom">
+          {secondaryItems.map((item) => (
+            <SidebarNavItem
+              key={getItemKey(item)}
+              item={item}
+              selectedPath={selectedPath}
+              collapsed={collapsed}
+              onSelect={handleSelect}
+              expandedGroups={expandedGroups}
+              onToggleGroup={handleToggleGroup}
+            />
+          ))}
+        </div>
+      ) : null}
     </aside>
   )
 }
