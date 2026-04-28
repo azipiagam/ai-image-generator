@@ -20,7 +20,7 @@ import PhotoLibraryRoundedIcon from "@mui/icons-material/PhotoLibraryRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import BoltRoundedIcon from "@mui/icons-material/BoltRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
-import piagamLogo from "../assets/piagam.png";
+import piagamLogo from "../assets/logo-piagam (1).svg";
 
 const FontStyle = () => (
   <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');`}</style>
