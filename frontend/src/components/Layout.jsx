@@ -4,6 +4,7 @@ import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded'
 
 import Header from './Template/Header'
 import Sidebar from './Template/Sidebar'
+import BackgroundMain from './Template/BackgroundMain'
 import { primaryNavigationItems } from '../services/navigation.js'
 import LayoutHeaderActionsContext from './layoutHeaderContext.js'
 import {
@@ -11,42 +12,9 @@ import {
   GALLERY_DATE_TO_PARAM_KEY,
   GALLERY_SEARCH_PARAM_KEY,
   buildGalleryFilterSearchParams,
-  hasActiveGalleryFilters,
   readGalleryFilterState,
   resetGalleryFilterSearchParams,
 } from '../services/galleryFilters.js'
-
-function GalleryBreadcrumbFilters({
-  dateFrom,
-  dateTo,
-  onDateFromChange,
-  onDateToChange,
-}) {
-  return (
-    <div className="breadcrumb-filter-group">
-      <label className="breadcrumb-filter-field">
-        <span className="breadcrumb-filter-label">Dari</span>
-        <input
-          type="date"
-          className="breadcrumb-filter-input"
-          value={dateFrom}
-          onChange={onDateFromChange}
-        />
-      </label>
-
-      <label className="breadcrumb-filter-field">
-        <span className="breadcrumb-filter-label">Sampai</span>
-        <input
-          type="date"
-          className="breadcrumb-filter-input"
-          value={dateTo}
-          onChange={onDateToChange}
-        />
-      </label>
-
-    </div>
-  )
-}
 
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -57,33 +25,11 @@ export default function Layout({ children }) {
   const currentPath = location.pathname
   const breadcrumbItems = []
   const galleryFilterState = readGalleryFilterState(searchParams)
-  const hasGalleryFilters = hasActiveGalleryFilters(galleryFilterState)
   const isGalleryPage = currentPath === '/'
 
   const updateGallerySearchParams = (nextValues) => {
     setSearchParams(buildGalleryFilterSearchParams(searchParams, nextValues), { replace: true })
   }
-
-  const breadcrumbContent = isGalleryPage ? (
-    <GalleryBreadcrumbFilters
-      dateFrom={galleryFilterState.dateFrom}
-      dateTo={galleryFilterState.dateTo}
-      onDateFromChange={(event) =>
-        updateGallerySearchParams({
-          [GALLERY_SEARCH_PARAM_KEY]: galleryFilterState.search,
-          [GALLERY_DATE_FROM_PARAM_KEY]: event.target.value,
-          [GALLERY_DATE_TO_PARAM_KEY]: galleryFilterState.dateTo,
-        })
-      }
-      onDateToChange={(event) =>
-        updateGallerySearchParams({
-          [GALLERY_SEARCH_PARAM_KEY]: galleryFilterState.search,
-          [GALLERY_DATE_FROM_PARAM_KEY]: galleryFilterState.dateFrom,
-          [GALLERY_DATE_TO_PARAM_KEY]: event.target.value,
-        })
-      }
-    />
-  ) : null
 
   const toolbarActions = [
     ...(isGalleryPage
@@ -97,7 +43,6 @@ export default function Layout({ children }) {
               setSearchParams(resetGalleryFilterSearchParams(searchParams), {
                 replace: true,
               }),
-            disabled: !hasGalleryFilters,
           },
         ]
       : []),
@@ -120,6 +65,8 @@ export default function Layout({ children }) {
 
   return (
     <div className={`dashboard-shell${collapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
+      <BackgroundMain />
+
       <Sidebar
         activePath={currentPath}
         collapsed={collapsed}
@@ -143,7 +90,6 @@ export default function Layout({ children }) {
           title="Framelens"
           subtitle=""
           breadcrumb={breadcrumbItems}
-          breadcrumbContent={breadcrumbContent}
           searchProps={searchProps}
           toolbarActions={toolbarActions}
           showMenuButton

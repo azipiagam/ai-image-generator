@@ -187,13 +187,8 @@ function Header({
     }
   }, [isDepartmentDropdownOpen])
 
-  useEffect(() => {
-    setIsDepartmentDropdownOpen(false)
-  }, [departmentFilterProps?.selectedDepartmentId])
-
   useLayoutEffect(() => {
     if (!isDepartmentDropdownOpen) {
-      setDepartmentDropdownStyle(null)
       return undefined
     }
 
