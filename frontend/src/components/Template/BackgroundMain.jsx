@@ -1,4 +1,4 @@
-function BackgroundMain({ position = 'fixed', zIndex = -1 }) {
+function BackgroundMain({ position = 'fixed', zIndex = 0 }) {
   return (
     <div aria-hidden="true" style={{ ...styles.root, position, zIndex }}>
       <div style={styles.texture} />

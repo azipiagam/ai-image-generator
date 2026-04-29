@@ -1,67 +1,19 @@
 import { useState } from 'react'
-import { useLocation, useSearchParams } from 'react-router-dom'
-import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded'
+import { useLocation } from 'react-router-dom'
 
 import Header from './Template/Header'
 import Sidebar from './Template/Sidebar'
 import BackgroundMain from './Template/BackgroundMain'
 import { primaryNavigationItems } from '../services/navigation.js'
 import LayoutHeaderActionsContext from './layoutHeaderContext.js'
-import {
-  GALLERY_DATE_FROM_PARAM_KEY,
-  GALLERY_DATE_TO_PARAM_KEY,
-  GALLERY_SEARCH_PARAM_KEY,
-  buildGalleryFilterSearchParams,
-  readGalleryFilterState,
-  resetGalleryFilterSearchParams,
-} from '../services/galleryFilters.js'
 
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [pageToolbarActions, setPageToolbarActions] = useState([])
   const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
   const currentPath = location.pathname
   const breadcrumbItems = []
-  const galleryFilterState = readGalleryFilterState(searchParams)
-  const isGalleryPage = currentPath === '/'
-
-  const updateGallerySearchParams = (nextValues) => {
-    setSearchParams(buildGalleryFilterSearchParams(searchParams, nextValues), { replace: true })
-  }
-
-  const toolbarActions = [
-    ...(isGalleryPage
-      ? [
-          {
-            id: 'gallery-reset-filter',
-            ariaLabel: 'Reset filter gallery',
-            title: 'Reset filter',
-            icon: <RestartAltRoundedIcon fontSize="small" />,
-            onClick: () =>
-              setSearchParams(resetGalleryFilterSearchParams(searchParams), {
-                replace: true,
-              }),
-          },
-        ]
-      : []),
-    ...pageToolbarActions,
-  ]
-
-  const searchProps = isGalleryPage
-    ? {
-        value: galleryFilterState.search,
-        placeholder: 'Cari prompt atau nama file...',
-        ariaLabel: 'Cari hasil generate',
-        onChange: (event) =>
-          updateGallerySearchParams({
-            [GALLERY_SEARCH_PARAM_KEY]: event.target.value,
-            [GALLERY_DATE_FROM_PARAM_KEY]: galleryFilterState.dateFrom,
-            [GALLERY_DATE_TO_PARAM_KEY]: galleryFilterState.dateTo,
-          }),
-      }
-    : undefined
 
   return (
     <div className={`dashboard-shell${collapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
@@ -90,8 +42,7 @@ export default function Layout({ children }) {
           title="Framelens"
           subtitle=""
           breadcrumb={breadcrumbItems}
-          searchProps={searchProps}
-          toolbarActions={toolbarActions}
+          toolbarActions={pageToolbarActions}
           showMenuButton
           onMenuToggle={() => setMobileOpen((currentValue) => !currentValue)}
         />

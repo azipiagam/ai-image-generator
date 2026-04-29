@@ -38,7 +38,6 @@
   import CropOriginalIcon               from "@mui/icons-material/CropOriginal";
   import BlurOnIcon                     from "@mui/icons-material/BlurOn";
   import GradientIcon                   from "@mui/icons-material/Gradient";
-  import { useLayoutHeaderActions } from "../components/layoutHeaderContext.js";
   import {
     GALLERY_DATE_FROM_PARAM_KEY,
     GALLERY_DATE_TO_PARAM_KEY,
@@ -331,7 +330,7 @@
             fontSize:"0.70rem",
             fontWeight:600,
             color:"#233971",
-            background:"rgba(255,255,255,0.97)",
+            background:"#fff",
             px:"5px",
             borderRadius:"4px",
             pointerEvents:"none",
@@ -371,8 +370,7 @@
             zIndex:3,
             borderRadius:"16px",
             border:"1.5px solid rgba(35,57,113,0.25)",
-            background:"rgba(255,255,255,0.72)",
-            backdropFilter:"blur(8px)",
+            background:"#fff",
             display:"flex",
             alignItems:"center",
             gap:"8px",
@@ -415,7 +413,6 @@
 
   export default function Gallery() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const setPageToolbarActions = useLayoutHeaderActions();
     const [gallery,       setGallery]       = useState([]);
     const [previewItem,   setPreviewItem]   = useState(null);
     const [hovered,       setHovered]       = useState(null);
@@ -514,21 +511,6 @@
     }, []);
 
     useEffect(() => {
-      setPageToolbarActions([
-        {
-          id:"gallery-delete-all",
-          ariaLabel:"Hapus semua item gallery",
-          title:"Hapus semua item gallery",
-          icon:<DeleteSweepRoundedIcon fontSize="small" />,
-          onClick:()=>setConfirmDialog({ open:true, type:"all", id:null, count:0 }),
-          variant:"danger",
-        },
-      ]);
-
-      return () => setPageToolbarActions([]);
-    }, [gallery.length, setPageToolbarActions]);
-
-    useEffect(() => {
       const fn = () => setShowScrollTop(window.scrollY > 420);
       window.addEventListener("scroll", fn, { passive:true });
       fn();
@@ -604,7 +586,15 @@
         <Stack spacing={4}>
 
           {/* ══ GALLERY HEADER ══ */}
-          <Card elevation={0} sx={{ ...cardShell, overflow:"hidden" }}>
+          <Card
+            elevation={0}
+            sx={{
+              ...cardShell,
+              overflow:"hidden",
+              background:"linear-gradient(145deg,#f8fbff 0%,#eef4fb 55%,#f5f9ff 100%)",
+              backdropFilter:"none",
+            }}
+          >
             <CardContent sx={{ p:{ xs:3,md:"30px 34px" }, position:"relative", zIndex:2 }}>
               <Stack spacing={3}>
                 <Stack direction={{ xs:"column", lg:"row" }} alignItems={{ xs:"stretch", lg:"center" }} justifyContent="space-between" spacing={3}>
@@ -626,8 +616,7 @@
                         ...pill({ py:1, px:2.2, fontSize:"0.82rem" }),
                         borderColor:"rgba(35,57,113,0.28)",
                         color:"#233971",
-                        background:"rgba(255,255,255,0.75)",
-                        backdropFilter:"blur(8px)",
+                        background:"#fff",
                         "&:hover":{ background:"rgba(35,57,113,0.08)", borderColor:"rgba(35,57,113,0.38)" },
                       }}
                     >
@@ -664,8 +653,7 @@
                       sx={{
                         "& .MuiOutlinedInput-root":{
                           borderRadius:"16px",
-                          background:"rgba(255,255,255,0.92)",
-                          backdropFilter:"blur(8px)",
+                          background:"#fff",
                           ...F,
                           "& fieldset":{ borderColor:"rgba(35,57,113,0.18)" },
                           "&:hover fieldset":{ borderColor:"rgba(35,57,113,0.35)" },

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  ArrowBackRounded as ArrowBackRoundedIcon,
   CloseRounded as CloseRoundedIcon,
   KeyboardArrowLeftRounded as KeyboardArrowLeftRoundedIcon,
   KeyboardArrowRightRounded as KeyboardArrowRightRoundedIcon,
@@ -13,6 +14,8 @@ import {
   secondaryNavigationItems,
 } from '../../services/navigation.js'
 import { submitLogout } from '../../services/logoutService.js'
+
+const PILAR_GROUP_DASHBOARD_URL = 'https://pilargroup.id/dashboard'
 
 function getInitials(name) {
   return name
@@ -308,9 +311,9 @@ function Sidebar({
         ))}
       </nav>
 
-      {secondaryItems.length > 0 ? (
-        <div className="sidebar-bottom">
-          {secondaryItems.map((item) => (
+      <div className="sidebar-bottom">
+        {secondaryItems.length > 0
+          ? secondaryItems.map((item) => (
             <SidebarNavItem
               key={getItemKey(item)}
               item={item}
@@ -320,9 +323,23 @@ function Sidebar({
               expandedGroups={expandedGroups}
               onToggleGroup={handleToggleGroup}
             />
-          ))}
-        </div>
-      ) : null}
+          ))
+          : null}
+
+        <a
+          href={PILAR_GROUP_DASHBOARD_URL}
+          className="nav-item sidebar-external-link"
+          data-tooltip={collapsed ? 'PilarGroup' : undefined}
+          onClick={() => {
+            if (mobileOpen) {
+              onCloseMobile?.()
+            }
+          }}
+        >
+          <ArrowBackRoundedIcon className="nav-icon" aria-hidden="true" />
+          <span className="nav-text">PilarGroup</span>
+        </a>
+      </div>
     </aside>
   )
 }
