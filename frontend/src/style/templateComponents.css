@@ -71,12 +71,12 @@ select {
   isolation: isolate;
   display: grid;
   grid-template-columns: var(--sidebar-current-width) minmax(0, 1fr);
-  height: 100dvh;
+  height: auto;
   min-height: 100vh;
-  max-height: 100dvh;
+  max-height: none;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   background: transparent;
   transition: grid-template-columns var(--layout-transition-duration) var(--layout-transition-easing);
 }
@@ -88,21 +88,19 @@ select {
 .dashboard-stage {
   position: relative;
   z-index: 1;
-  height: 100%;
+  height: auto;
   min-width: 0;
-  min-height: 0;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .dashboard-main {
   flex: 1;
-  min-height: 0;
+  min-height: auto;
   padding: 24px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  overscroll-behavior: contain;
+  overflow: visible;
 }
 
 .sidebar {
