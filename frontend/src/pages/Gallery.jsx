@@ -669,14 +669,14 @@
                   />
                 </Stack>
 
-                <Stack direction={{ xs:"column", sm:"row" }} spacing={2} alignItems="center" justifyContent="space-between">
-                  <Box>
+                <Stack direction="row" spacing={2} alignItems="flex-start" justifyContent="space-between">
+                  <Box sx={{ flexShrink:0 }}>
                     <Typography sx={{ ...F, fontSize:"0.78rem", color:"#64748b", mb:0.5 }}>Total item</Typography>
                     <Typography sx={{ ...F, fontSize:"1.9rem", fontWeight:800, color:"#0f172a" }}>{filteredGallery.length}</Typography>
                   </Box>
-                  <Box>
+                  <Box sx={{ minWidth:0, textAlign:"right" }}>
                     <Typography sx={{ ...F, fontSize:"0.78rem", color:"#64748b", mb:0.5 }}>Rentang</Typography>
-                    <Typography sx={{ ...F, fontSize:"1rem", fontWeight:700, color:"#0f172a" }}>{dateRangeText}</Typography>
+                    <Typography sx={{ ...F, fontSize:{ xs:"0.85rem", sm:"1rem" }, fontWeight:700, color:"#0f172a", wordBreak:"break-word" }}>{dateRangeText}</Typography>
                   </Box>
                 </Stack>
               </Stack>
