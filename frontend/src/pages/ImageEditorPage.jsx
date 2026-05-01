@@ -27,8 +27,6 @@ import FlipCameraAndroidIcon from "@mui/icons-material/FlipCameraAndroid";
 import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
 import ImageIcon from "@mui/icons-material/Image";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import HourglassTopRoundedIcon from "@mui/icons-material/HourglassTopRounded";
 import TuneIcon from "@mui/icons-material/Tune";
 import BoltIcon from "@mui/icons-material/Bolt";
 import StorefrontIcon from "@mui/icons-material/Storefront";
@@ -39,9 +37,6 @@ import CollectionsRoundedIcon from "@mui/icons-material/CollectionsRounded";
 import ZoomInIcon from "@mui/icons-material/ZoomIn";
 import CloseIcon from "@mui/icons-material/Close";
 import ZoomInMapIcon from "@mui/icons-material/ZoomInMap";
-import BlurOnIcon from "@mui/icons-material/BlurOn";
-import GradientIcon from "@mui/icons-material/Gradient";
-import CropOriginalIcon from "@mui/icons-material/CropOriginal";
 import AutoFixHighRoundedIcon from "@mui/icons-material/AutoFixHighRounded";
 // ── NEW: reference icon
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
@@ -705,35 +700,10 @@ function CardBadgeIcon({ icon, gradient, glow }) {
   );
 }
 
-/* ─── FloatBadge ─── */
-function FloatBadge({ icon, sx }) {
-  return (
-    <Box
-      sx={{
-        position: "absolute",
-        width: 44,
-        height: 44,
-        borderRadius: "14px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backdropFilter: "blur(16px)",
-        border: "1.5px solid rgba(255,255,255,0.6)",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.7)",
-        animation: "fbf 5s ease-in-out infinite",
-        "& svg": { fontSize: 21, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.15))" },
-        ...sx,
-      }}
-    >
-      {icon}
-    </Box>
-  );
-}
-
 /* ══════════════════════════════════════════════
    NEW ── Reference Image Upload Section
 ══════════════════════════════════════════════ */
-function ReferenceImageSection({ refFiles, refPreviews, onAdd, onRemove, onPreview, dragActiveRef, onDragOver, onDragLeave, onDrop, inputRef, F }) {
+function ReferenceImageSection({ refPreviews, onAdd, onRemove, onPreview, dragActiveRef, onDragOver, onDragLeave, onDrop, inputRef, F }) {
   return (
     <Box>
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1.2}>
@@ -996,15 +966,13 @@ export default function ImageEditorPage() {
   const [batchCount, setBatchCount] = useState(1);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState("");
-  const [lightboxFile, setLightboxFile] = useState(null);
 
   // ── NEW: reference images state
   const [refFiles, setRefFiles] = useState([]);
   const [dragActiveRef, setDragActiveRef] = useState(false);
 
-  const openLightbox = (src, file = null) => {
+  const openLightbox = (src) => {
     setLightboxSrc(src);
-    setLightboxFile(file);
     setLightboxOpen(true);
   };
   const closeLightbox = () => setLightboxOpen(false);
@@ -1175,7 +1143,7 @@ export default function ImageEditorPage() {
 
   const saveToGallery = ({ imageUrl, promptText, originalFile }) => {
     try {
-      const old = JSON.parse(localStorage.getItem("generated_images_gallery") || "[]");
+      const old = JSON.parse(localStorage.getItem(" _images_gallery") || "[]");
       const item = {
         id: Date.now() + Math.floor(Math.random() * 10000),
         imageUrl,
@@ -1396,158 +1364,6 @@ export default function ImageEditorPage() {
       />
 
       <Stack spacing={4}>
-        <Box sx={{ position: "relative" }}>
-          <FloatBadge
-            icon={<AutoAwesomeIcon sx={{ color: "#fff" }} />}
-            sx={{
-              top: 6,
-              left: { xs: 0, md: 56 },
-              background: "linear-gradient(135deg,#233971,#2e4fa3)",
-              animationDelay: "0s",
-              display: { xs: "none", md: "flex" },
-            }}
-          />
-          <FloatBadge
-            icon={<PaletteIcon sx={{ color: "#fff" }} />}
-            sx={{
-              top: -14,
-              right: { xs: 0, md: 110 },
-              background: "linear-gradient(135deg,#0f172a,#233971)",
-              animationDelay: "1.8s",
-              display: { xs: "none", md: "flex" },
-            }}
-          />
-          <FloatBadge
-            icon={<StorefrontIcon sx={{ color: "#fff" }} />}
-            sx={{
-              bottom: 2,
-              right: { xs: 0, md: 260 },
-              background: "linear-gradient(135deg,#1a2d5a,#233971)",
-              animationDelay: "3.2s",
-              display: { xs: "none", md: "flex" },
-            }}
-          />
-          <FloatBadge
-            icon={<BoltIcon sx={{ color: "#fff" }} />}
-            sx={{
-              bottom: -6,
-              left: { xs: 0, md: 170 },
-              background: "linear-gradient(135deg,#0f1e3d,#233971)",
-              animationDelay: "2.1s",
-              display: { xs: "none", md: "flex" },
-            }}
-          />
-
-          <Paper
-            elevation={0}
-            sx={{
-              p: { xs: "28px 24px", md: "40px 48px" },
-              borderRadius: "28px",
-              background: "linear-gradient(135deg,#0b1220 0%,#0f172a 22%,#1a2d5a 58%,#233971 100%)",
-              border: "1px solid rgba(35,57,113,0.45)",
-              backdropFilter: "blur(22px)",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.18), 0 24px 60px rgba(15,23,42,0.38), inset 0 1px 0 rgba(255,255,255,0.06)",
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            <Box
-              aria-hidden
-              sx={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "radial-gradient(circle at top right, rgba(35,57,113,0.35), transparent 28%), radial-gradient(circle at bottom left, rgba(46,79,163,0.22), transparent 32%)",
-                pointerEvents: "none",
-              }}
-            />
-            <AutoAwesomeIcon sx={{ position: "absolute", top: 18, right: 28, fontSize: 110, color: "rgba(255,255,255,0.05)", transform: "rotate(-12deg)", pointerEvents: "none" }} />
-            <ImageIcon sx={{ position: "absolute", bottom: 18, right: 180, fontSize: 90, color: "rgba(46,79,163,0.10)", transform: "rotate(8deg)", pointerEvents: "none" }} />
-            <PaletteIcon sx={{ position: "absolute", top: 72, left: 190, fontSize: 72, color: "rgba(35,57,113,0.10)", transform: "rotate(-16deg)", pointerEvents: "none" }} />
-            <CropOriginalIcon sx={{ position: "absolute", bottom: 10, left: 28, fontSize: 100, color: "rgba(255,255,255,0.04)", transform: "rotate(14deg)", pointerEvents: "none" }} />
-            <BlurOnIcon sx={{ position: "absolute", top: 20, left: 58, fontSize: 58, color: "rgba(35,57,113,0.14)", transform: "rotate(-10deg)", pointerEvents: "none" }} />
-            <GradientIcon sx={{ position: "absolute", bottom: 26, left: "43%", fontSize: 82, color: "rgba(46,79,163,0.08)", transform: "rotate(-8deg)", pointerEvents: "none" }} />
-            <Box aria-hidden sx={{ position: "absolute", top: 0, left: 0, right: 0, height: "1px", background: "linear-gradient(90deg,transparent,rgba(255,255,255,0.65),transparent)" }} />
-
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={3}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", md: "center" }}
-              sx={{ position: "relative", zIndex: 1 }}
-            >
-              <Box>
-                <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>
-                  <Box sx={{ width: 8, height: 8, borderRadius: "50%", background: "linear-gradient(135deg,#7a9bd4,#b8cbee)", boxShadow: "0 0 0 3px rgba(35,57,113,0.25)" }} />
-                  <Typography sx={{ ...F, fontWeight: 600, fontSize: "0.7rem", letterSpacing: "0.12em", textTransform: "uppercase", color: "#7a9bd4" }}>
-                    Powered by Artificial Intelligence
-                  </Typography>
-                </Stack>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    ...F,
-                    fontWeight: 800,
-                    fontSize: { xs: "1.75rem", md: "2.2rem" },
-                    lineHeight: 1.15,
-                    color: "#f8fafc",
-                    mb: 1.5,
-                    "& span": {
-                      background: "linear-gradient(135deg,#7a9bd4,#5b7ec7,#b8cbee)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                    },
-                  }}
-                >
-                  AI Image <span>Editor</span>
-                </Typography>
-                <Typography sx={{ ...F, color: "rgba(226,232,240,0.82)", maxWidth: 560, lineHeight: 1.7, fontSize: "0.93rem" }}>
-                  Workspace modern untuk marketplace & e-commerce — upload gambar, pilih preset, tulis prompt, atur batch, rasio, resolusi, dan generate hasil AI.
-                </Typography>
-              </Box>
-              <Stack direction="row" spacing={1.2} flexWrap="wrap" useFlexGap>
-                <Chip
-                  label={loading ? "Processing…" : "Ready"}
-                  icon={loading ? <HourglassTopRoundedIcon sx={{ fontSize: "15px !important" }} /> : <CheckCircleRoundedIcon sx={{ fontSize: "15px !important" }} />}
-                  sx={{
-                    ...F,
-                    fontWeight: 700,
-                    fontSize: "0.77rem",
-                    borderRadius: "999px",
-                    background: loading ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "linear-gradient(135deg,#233971,#2e4fa3)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.08)",
-                    boxShadow: loading ? "0 4px 12px rgba(245,158,11,0.35)" : "0 6px 18px rgba(35,57,113,0.45)",
-                    "& .MuiChip-icon": { color: "#fff" },
-                  }}
-                />
-                {[
-                  { label: "Batch Select", color: "#7a9bd4", bg: "rgba(122,155,212,0.10)", border: "rgba(122,155,212,0.22)" },
-                  { label: "Aspect Ratio", color: "#b8cbee", bg: "rgba(184,203,238,0.10)", border: "rgba(184,203,238,0.22)" },
-                  { label: "Full HD / 2K / 4K", color: "#dce8f7", bg: "rgba(220,232,247,0.10)", border: "rgba(220,232,247,0.22)" },
-                  // ── NEW chip in header
-                  { label: "Multi Reference", color: "#a8c0f0", bg: "rgba(168,192,240,0.10)", border: "rgba(168,192,240,0.22)" },
-                ].map(({ label, color, bg, border }) => (
-                  <Chip
-                    key={label}
-                    label={label}
-                    sx={{
-                      ...F,
-                      fontWeight: 600,
-                      fontSize: "0.77rem",
-                      borderRadius: "999px",
-                      background: bg,
-                      color,
-                      border: `1px solid ${border}`,
-                      backdropFilter: "blur(8px)",
-                    }}
-                  />
-                ))}
-              </Stack>
-            </Stack>
-          </Paper>
-        </Box>
-
         <Stack direction={{ xs: "column", lg: "row" }} spacing={3} alignItems="stretch">
           <Card elevation={0} sx={{ ...cardShell, flex: 1.05 }}>
             <CardBg variant="left" />
@@ -1560,7 +1376,6 @@ export default function ImageEditorPage() {
             </Box>
 
             <CardBadgeIcon icon={<CloudUploadIcon />} gradient="linear-gradient(135deg,#233971 0%,#2e4fa3 60%,#5b7ec7 100%)" glow="rgba(35,57,113,0.45)" />
-
             <CardContent sx={{ p: { xs: 3, md: "36px 36px" }, position: "relative", zIndex: 2 }}>
               <Stack spacing={3}>
                 <Box>
@@ -2274,4 +2089,3 @@ export default function ImageEditorPage() {
     </Box>
   );
 }
-
