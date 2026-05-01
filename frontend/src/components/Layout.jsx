@@ -62,7 +62,8 @@ export default function Layout({ children }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '0.75rem',
+            gap: '0.2rem',
+            flexDirection: 'column',
             padding: '1rem 1.5rem',
             borderTop: '1px solid rgba(226,232,240,0.7)',
             background: 'rgba(255,255,255,0.66)',
@@ -73,17 +74,8 @@ export default function Layout({ children }) {
             letterSpacing: '0.01em',
           }}
         >
-          <span>{userName}</span>
-          <span
-            style={{
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              background: '#16263f',
-              flexShrink: 0,
-            }}
-          />
-          <span>{userRole}</span>
+          <span>© 2026 PT Pilar Niaga Makmur. All rights reserved.</span>
+          <span>Developed by IT Team PT Pilar Niaga Makmur.</span>
         </footer>
       </div>
     </div>
