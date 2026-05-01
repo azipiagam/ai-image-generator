@@ -6,14 +6,18 @@ import Sidebar from './Template/Sidebar'
 import BackgroundMain from './Template/BackgroundMain'
 import { primaryNavigationItems } from '../services/navigation.js'
 import LayoutHeaderActionsContext from './layoutHeaderContext.js'
+import { useAuth } from '../auth/AuthContext'
 
 export default function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [collapsed, setCollapsed] = useState(false)
   const [pageToolbarActions, setPageToolbarActions] = useState([])
+  const { user } = useAuth()
   const location = useLocation()
   const currentPath = location.pathname
   const breadcrumbItems = []
+  const userName = user?.name || user?.username || 'AI Image Generator'
+  const userRole = user?.job_position || user?.department || 'Creative Workspace'
 
   return (
     <div className={`dashboard-shell${collapsed ? ' dashboard-shell--sidebar-collapsed' : ''}`}>
@@ -23,6 +27,8 @@ export default function Layout({ children }) {
         activePath={currentPath}
         collapsed={collapsed}
         mobileOpen={mobileOpen}
+        userName={userName}
+        userRole={userRole}
         primaryItems={primaryNavigationItems}
         secondaryItems={[]}
         onCloseMobile={() => setMobileOpen(false)}
@@ -67,7 +73,7 @@ export default function Layout({ children }) {
             letterSpacing: '0.01em',
           }}
         >
-          <span>AI Image Generator</span>
+          <span>{userName}</span>
           <span
             style={{
               width: 5,
@@ -77,7 +83,7 @@ export default function Layout({ children }) {
               flexShrink: 0,
             }}
           />
-          <span>Local Workspace</span>
+          <span>{userRole}</span>
         </footer>
       </div>
     </div>
