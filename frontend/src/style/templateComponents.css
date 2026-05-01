@@ -3185,6 +3185,16 @@ select {
     padding-inline: 0.9rem;
   }
 
+  .sidebar-nav {
+    flex: 0 1 auto;
+    overflow-y: auto;
+  }
+
+  .sidebar-bottom {
+    margin-top: 0.75rem;
+    padding-top: 0.85rem;
+  }
+
   .dashboard-overview,
   .dashboard-grid,
   .master-project-grid,
@@ -3478,10 +3488,12 @@ select {
 
   .dashboard-main {
     padding: 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   .dashboard-footer {
     margin-top: 0.9rem;
+    margin-bottom: 0.35rem;
     padding: 0.85rem 0.9rem;
     border-radius: 16px;
     font-size: 0.68rem;
