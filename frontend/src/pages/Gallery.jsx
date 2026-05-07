@@ -1064,7 +1064,7 @@
                         </Typography>
 
                         <Typography sx={{ ...F, color:"#475569", fontSize:"0.70rem", fontWeight:600, mb:"8px" }}>
-                          By {authorName}
+                          By {item.createdBy || item.username || item.user || authorName}
                         </Typography>
 
                         <Box sx={{ flexShrink:0, mb:"8px", minHeight:`calc(0.73rem * 1.5 * ${PROMPT_LINES})` }}>
@@ -1293,10 +1293,61 @@
             <DialogContent sx={{ pt:2.5, maxHeight:"80vh", overflowY:"auto" }}>
               {previewItem && (
                 <Stack spacing={2.4}>
+                  {/* Zoom controls */}
+                  <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
+                    <Typography sx={{ ...F, fontSize:"0.75rem", color:"#94a3b8", fontWeight:600 }}>
+                      Zoom: {Math.round(previewZoom * 100)}%
+                    </Typography>
+                    <Stack direction="row" spacing={0.8}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={()=>setPreviewZoom((v) => Math.max(0.25, parseFloat((v - 0.25).toFixed(2))))}
+                        sx={{
+                          ...F, textTransform:"none", fontWeight:700, fontSize:"0.78rem",
+                          borderRadius:"10px", minWidth:60,
+                          borderColor:"rgba(35,57,113,0.25)", color:"#233971",
+                          "&:hover":{ background:"rgba(35,57,113,0.07)", borderColor:"rgba(35,57,113,0.4)" },
+                        }}
+                      >
+                        − Zoom
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={()=>setPreviewZoom(1)}
+                        sx={{
+                          ...F, textTransform:"none", fontWeight:700, fontSize:"0.78rem",
+                          borderRadius:"10px", minWidth:54,
+                          borderColor:"rgba(35,57,113,0.25)", color:"#64748b",
+                          "&:hover":{ background:"rgba(35,57,113,0.06)" },
+                        }}
+                      >
+                        Reset
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={()=>setPreviewZoom((v) => Math.min(4, parseFloat((v + 0.25).toFixed(2))))}
+                        sx={{
+                          ...F, textTransform:"none", fontWeight:700, fontSize:"0.78rem",
+                          borderRadius:"10px", minWidth:60,
+                          borderColor:"rgba(35,57,113,0.25)", color:"#233971",
+                          "&:hover":{ background:"rgba(35,57,113,0.07)", borderColor:"rgba(35,57,113,0.4)" },
+                        }}
+                      >
+                        Zoom +
+                      </Button>
+                    </Stack>
+                  </Stack>
+
+                  {/* Image container — scrollable so zoom actually works */}
                   <Box
                     sx={{
                       width:"100%",
-                      maxHeight:"68vh",
+                      height: previewZoom <= 1 ? "auto" : `${Math.round(420 * previewZoom)}px`,
+                      minHeight:220,
+                      maxHeight: previewZoom <= 1 ? "62vh" : "unset",
                       overflow:"auto",
                       borderRadius:"20px",
                       background:"linear-gradient(135deg,rgba(232,237,248,0.9),rgba(234,240,251,0.9))",
@@ -1304,8 +1355,9 @@
                       animation:"fadeR 0.4s ease",
                       display:"flex",
                       justifyContent:"center",
-                      alignItems:"center",
-                      p:1,
+                      alignItems: previewZoom <= 1 ? "center" : "flex-start",
+                      p:1.5,
+                      boxSizing:"border-box",
                     }}
                   >
                     <Box
@@ -1313,45 +1365,17 @@
                       src={previewItem.imageUrl}
                       alt={previewItem.prompt||"Preview"}
                       sx={{
-                        width:"auto",
-                        maxWidth:"100%",
-                        height:"auto",
-                        maxHeight:"66vh",
-                        objectFit:"contain",
-                        transform:`scale(${previewZoom})`,
-                        transformOrigin:"center center",
-                        transition:"transform 0.2s ease",
                         display:"block",
+                        width: previewZoom <= 1 ? "auto" : `${Math.round(100 * previewZoom)}%`,
+                        maxWidth: previewZoom <= 1 ? "100%" : "unset",
+                        height: previewZoom <= 1 ? "auto" : "auto",
+                        maxHeight: previewZoom <= 1 ? "58vh" : "unset",
+                        objectFit:"contain",
+                        transition:"width 0.2s ease, max-width 0.2s ease",
+                        borderRadius:"12px",
                       }}
                     />
                   </Box>
-
-                  <Stack direction="row" spacing={1} justifyContent="flex-end">
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={()=>setPreviewZoom((value) => Math.max(0.5, value - 0.25))}
-                      sx={{ textTransform:"none", borderColor:"rgba(35,57,113,0.25)", color:"#475569" }}
-                    >
-                      Zoom -
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={()=>setPreviewZoom((value) => Math.min(2, value + 0.25))}
-                      sx={{ textTransform:"none", borderColor:"rgba(35,57,113,0.25)", color:"#475569" }}
-                    >
-                      Zoom +
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={()=>setPreviewZoom(1)}
-                      sx={{ textTransform:"none", borderColor:"rgba(35,57,113,0.25)", color:"#475569" }}
-                    >
-                      Reset
-                    </Button>
-                  </Stack>
 
                   <Paper
                     variant="outlined"
@@ -1364,21 +1388,46 @@
                     <Typography sx={{ ...F, fontWeight:800, color:"#0f172a", lineHeight:1.5, fontSize:"0.95rem", mb:0.8, wordBreak:"break-word" }}>
                       {previewItem.fileName||previewItem.filename||"-"}
                     </Typography>
-                    <Typography sx={{ ...F, color:"#475569", fontSize:"0.82rem", fontWeight:600, mb:1 }}>
-                      By {authorName}
+                    <Typography sx={{ ...F, color:"#475569", fontSize:"0.82rem", fontWeight:600, mb:1.2 }}>
+                      By {previewItem.createdBy || previewItem.username || previewItem.user || authorName}
                     </Typography>
                     {previewItem.prompt ? (
-                      <Box sx={{ mb:1 }}>
-                        <Typography sx={{ ...F, color:"#0f172a", fontWeight:700, fontSize:"0.78rem", mb:0.4 }}>
-                          Prompt
-                        </Typography>
-                        <Typography sx={{ ...F, color:"#475569", lineHeight:1.7, fontSize:"0.86rem" }}>
+                      <Box
+                        sx={{
+                          mb:1.5,
+                          p:"10px 14px",
+                          borderRadius:"12px",
+                          background:"linear-gradient(135deg,rgba(35,57,113,0.06),rgba(46,79,163,0.05))",
+                          border:"1px solid rgba(35,57,113,0.15)",
+                        }}
+                      >
+                        <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mb:0.6 }}>
+                          <AutoFixHighRoundedIcon sx={{ fontSize:14, color:"#233971" }}/>
+                          <Typography sx={{ ...F, color:"#233971", fontWeight:800, fontSize:"0.72rem", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                            Prompt
+                          </Typography>
+                        </Stack>
+                        <Typography sx={{ ...F, color:"#1e293b", lineHeight:1.75, fontSize:"0.87rem", fontWeight:500 }}>
                           {previewItem.prompt}
                         </Typography>
                       </Box>
-                    ) : null}
+                    ) : (
+                      <Box
+                        sx={{
+                          mb:1.5,
+                          p:"10px 14px",
+                          borderRadius:"12px",
+                          background:"rgba(248,250,252,0.8)",
+                          border:"1px dashed rgba(35,57,113,0.15)",
+                        }}
+                      >
+                        <Typography sx={{ ...F, color:"#94a3b8", fontSize:"0.82rem", fontStyle:"italic" }}>
+                          Tidak ada prompt tersedia.
+                        </Typography>
+                      </Box>
+                    )}
                     <Stack direction="row" spacing={1} alignItems="center">
-                      <TuneRoundedIcon sx={{ fontSize:13, color:"#94a3b8" }}/>
+                      <CalendarMonthRoundedIcon sx={{ fontSize:13, color:"#94a3b8" }}/>
                       <Typography sx={{ ...F, color:"#94a3b8", fontSize:"0.75rem" }}>
                         {previewItem.createdAt||"-"}
                       </Typography>
