@@ -206,6 +206,8 @@ async def edit_image(
     request: Request,
     file: UploadFile = File(...),
     prompt: str = Form(...),
+    aspect_ratio: str = Form("original"),
+    resolution: str = Form("original"),
     reference_image_count: int = Form(0),
     current_user: dict = Depends(verify_token),
 ):
@@ -273,6 +275,8 @@ async def edit_image(
             api_key=dept_api_key,
             filename_prefix=dept_prefix,
             created_by=user_display_name,
+            aspect_ratio=aspect_ratio,
+            requested_resolution=resolution,
         )
 
         if not result.get("filename"):

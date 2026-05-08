@@ -1,12 +1,60 @@
-import json
 import io
+import json
 import uuid
-from pathlib import Path
 from typing import Optional
-from PIL import Image
+
+from PIL import Image, ImageFilter, ImageOps
 from google import genai
 from google.genai import types
+
 from app.config import GEMINI_API_KEY_ECOMMERCE, OUTPUT_DIR
+
+
+RESAMPLING_LANCZOS = getattr(Image, "Resampling", Image).LANCZOS
+SUPPORTED_RESOLUTIONS = {
+    "1920x1080": (1920, 1080),
+    "2560x1440": (2560, 1440),
+    "3840x2160": (3840, 2160),
+}
+
+
+def parse_resolution(resolution: Optional[str]) -> Optional[tuple[int, int]]:
+    value = (resolution or "").strip().lower()
+    if not value or value == "original":
+        return None
+    return SUPPORTED_RESOLUTIONS.get(value)
+
+
+def ensure_output_resolution(
+    image: Image.Image,
+    target_size: Optional[tuple[int, int]],
+    output_format: str,
+) -> Image.Image:
+    if not target_size:
+        return image.convert("RGB") if output_format == "JPEG" else image
+
+    target_width, target_height = target_size
+    working = image.convert("RGBA")
+
+    if working.width == target_width and working.height == target_height:
+        return working.convert("RGB") if output_format == "JPEG" else working
+
+    resized = ImageOps.contain(
+        working,
+        (target_width, target_height),
+        method=RESAMPLING_LANCZOS,
+    )
+
+    # Beri sedikit sharpen setelah upscale supaya hasil export besar tidak terlalu lembek.
+    if resized.width < target_width or resized.height < target_height:
+        resized = resized.filter(ImageFilter.UnsharpMask(radius=1.4, percent=115, threshold=2))
+
+    canvas = Image.new("RGBA", (target_width, target_height), (255, 255, 255, 0))
+    offset_x = (target_width - resized.width) // 2
+    offset_y = (target_height - resized.height) // 2
+    canvas.paste(resized, (offset_x, offset_y), resized)
+
+    return canvas.convert("RGB") if output_format == "JPEG" else canvas
 
 
 def save_inline_image(
@@ -15,24 +63,41 @@ def save_inline_image(
     prefix: str = "",
     created_by: str = "",
     prompt: str = "",
+    requested_resolution: Optional[str] = None,
 ) -> str:
     ext = ".png"
+    output_format = "PNG"
     if "jpeg" in mime_type or "jpg" in mime_type:
         ext = ".jpg"
+        output_format = "JPEG"
     elif "webp" in mime_type:
         ext = ".webp"
+        output_format = "WEBP"
+
     filename = f"{prefix}{uuid.uuid4().hex}{ext}"
     file_path = OUTPUT_DIR / filename
-    image = Image.open(io.BytesIO(data))
-    if ext == ".jpg":
-        image = image.convert("RGB")
-    image.save(file_path)
 
-    # Simpan metadata sidecar
+    image = Image.open(io.BytesIO(data))
+    image.load()
+    image = ensure_output_resolution(image, parse_resolution(requested_resolution), output_format)
+
+    save_kwargs = {}
+    if output_format == "JPEG":
+        save_kwargs.update({"quality": 95, "subsampling": 0, "optimize": True})
+    elif output_format == "PNG":
+        save_kwargs.update({"optimize": True, "compress_level": 1})
+    elif output_format == "WEBP":
+        save_kwargs.update({"quality": 95, "method": 6})
+
+    image.save(file_path, format=output_format, **save_kwargs)
+
     meta_path = OUTPUT_DIR / (filename + ".json")
     meta = {
         "createdBy": created_by,
-        "prompt":    prompt,
+        "prompt": prompt,
+        "requestedResolution": requested_resolution or "original",
+        "width": image.width,
+        "height": image.height,
     }
     try:
         meta_path.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
@@ -47,24 +112,66 @@ def extract_image_filename_from_response(
     prefix: str = "",
     created_by: str = "",
     prompt: str = "",
+    requested_resolution: Optional[str] = None,
 ) -> Optional[str]:
     candidates = getattr(response, "candidates", None) or []
     if not candidates:
         return None
+
     for candidate in candidates:
         content = getattr(candidate, "content", None)
         if not content:
             continue
+
         parts = getattr(content, "parts", None) or []
         for part in parts:
             inline_data = getattr(part, "inline_data", None)
             if inline_data and getattr(inline_data, "data", None):
                 mime_type = getattr(inline_data, "mime_type", "image/png")
                 return save_inline_image(
-                    inline_data.data, mime_type, prefix,
-                    created_by=created_by, prompt=prompt,
+                    inline_data.data,
+                    mime_type,
+                    prefix,
+                    created_by=created_by,
+                    prompt=prompt,
+                    requested_resolution=requested_resolution,
                 )
     return None
+
+
+def build_generation_prompt(
+    prompt: str,
+    reference_count: int,
+    aspect_ratio: Optional[str],
+    requested_resolution: Optional[str],
+) -> str:
+    normalized_aspect_ratio = (aspect_ratio or "").strip().lower()
+    parsed_resolution = parse_resolution(requested_resolution)
+
+    quality_instructions = []
+    if normalized_aspect_ratio and normalized_aspect_ratio != "original":
+        quality_instructions.append(f"Use aspect ratio {normalized_aspect_ratio}.")
+    if parsed_resolution:
+        width, height = parsed_resolution
+        quality_instructions.append(
+            f"Compose the final image for a crisp high-detail {width}x{height} export."
+        )
+        quality_instructions.append(
+            "Keep edges clean, avoid blur, and preserve fine texture detail."
+        )
+
+    quality_suffix = f" {' '.join(quality_instructions)}" if quality_instructions else ""
+
+    if reference_count > 0:
+        return (
+            f"The first image is the main product image to edit. "
+            f"The following {reference_count} image(s) are visual/style references. "
+            f"Use them only to guide the style, mood, lighting, or composition. "
+            f"Do not copy the reference images directly.{quality_suffix}\n\n"
+            f"{prompt}"
+        )
+
+    return f"{prompt}{quality_suffix}"
 
 
 def edit_image_with_gemini(
@@ -75,58 +182,41 @@ def edit_image_with_gemini(
     api_key: Optional[str] = None,
     filename_prefix: str = "",
     created_by: str = "",
+    aspect_ratio: Optional[str] = None,
+    requested_resolution: Optional[str] = None,
 ) -> dict:
-    """
-    Edit gambar utama dengan prompt.
-    Jika reference_images diberikan, gambar-gambar tersebut
-    akan disertakan sebagai konteks visual/style referensi.
-
-    api_key       : key Gemini yang akan dipakai (per-departemen)
-    filename_prefix: prefix nama file output, misal 'ec_' atau 'pd_'
-    reference_images format: [{"data": bytes, "mime_type": str}, ...]
-    """
     key = api_key or GEMINI_API_KEY_ECOMMERCE
     client = genai.Client(api_key=key)
 
-    contents = []
-
-    # 1. Gambar utama yang akan diedit
-    contents.append(
+    contents = [
         types.Part.from_bytes(
             data=image_bytes,
             mime_type=mime_type,
         )
-    )
+    ]
 
-    # 2. Tambahkan gambar referensi (jika ada) SEBELUM prompt teks
-    #    Urutan: [main_image, ref1, ref2, ..., prompt_text]
-    if reference_images:
-        for ref in reference_images:
-            ref_data = ref.get("data")
-            ref_mime = ref.get("mime_type", "image/png")
-            if ref_data:
-                contents.append(
-                    types.Part.from_bytes(
-                        data=ref_data,
-                        mime_type=ref_mime,
-                    )
-                )
-
-        # Hitung jumlah referensi valid
-        ref_count = len([r for r in reference_images if r.get("data")])
-
-        # Perkuat prompt agar model tahu peran tiap gambar
-        enhanced_prompt = (
-            f"The first image is the main product image to edit. "
-            f"The following {ref_count} image(s) are visual/style references — "
-            f"use them to guide the style, mood, lighting, or composition of the result. "
-            f"Do not copy the reference images directly.\n\n"
-            f"{prompt}"
+    valid_references = []
+    for ref in reference_images or []:
+        ref_data = ref.get("data")
+        ref_mime = ref.get("mime_type", "image/png")
+        if not ref_data:
+            continue
+        valid_references.append(ref)
+        contents.append(
+            types.Part.from_bytes(
+                data=ref_data,
+                mime_type=ref_mime,
+            )
         )
-        contents.append(enhanced_prompt)
-    else:
-        # Tidak ada referensi, pakai prompt langsung
-        contents.append(prompt)
+
+    contents.append(
+        build_generation_prompt(
+            prompt=prompt,
+            reference_count=len(valid_references),
+            aspect_ratio=aspect_ratio,
+            requested_resolution=requested_resolution,
+        )
+    )
 
     response = client.models.generate_content(
         model="gemini-3.1-flash-image-preview",
@@ -137,8 +227,11 @@ def edit_image_with_gemini(
     )
 
     filename = extract_image_filename_from_response(
-        response, filename_prefix,
-        created_by=created_by, prompt=prompt.strip(),
+        response,
+        filename_prefix,
+        created_by=created_by,
+        prompt=prompt.strip(),
+        requested_resolution=requested_resolution,
     )
 
     text_output = ""

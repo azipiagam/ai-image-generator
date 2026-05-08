@@ -495,7 +495,14 @@ function DatePickerBox({ label, value, onChange }) {
       setPreviewItem(item);
     };
 
-    const resetZoom = () => { setPreviewZoom(1); setPreviewPan({ x:0, y:0 }); };
+  const resetZoom = () => { setPreviewZoom(1); setPreviewPan({ x:0, y:0 }); };
+
+  const handlePreviewWheel = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? -0.15 : 0.15;
+    setPreviewZoom((v) => parseFloat(Math.min(5, Math.max(0.25, v + delta)).toFixed(2)));
+  };
 
     /* ── drag handlers (mouse) ── */
     const onMouseDown = (e) => {
@@ -1382,7 +1389,7 @@ function DatePickerBox({ label, value, onChange }) {
               </Stack>
             </DialogTitle>
 
-            <DialogContent sx={{ pt:2.5, maxHeight:"80vh", overflowY:"auto" }}>
+            <DialogContent sx={{ pt:2.5, maxHeight:"80vh", overflowY:"auto", overscrollBehavior:"contain" }}>
               {previewItem && (
                 <Stack spacing={2.4}>
                   {/* Zoom controls */}
@@ -1438,16 +1445,13 @@ function DatePickerBox({ label, value, onChange }) {
                     </Stack>
                   </Stack>
 
-                  {/* Image container — scroll zoom + drag pan + pinch zoom */}
-                  <Box
-                    onWheel={(e) => {
-                      e.preventDefault();
-                      const delta = e.deltaY > 0 ? -0.15 : 0.15;
-                      setPreviewZoom((v) => parseFloat(Math.min(5, Math.max(0.25, v + delta)).toFixed(2)));
-                    }}
-                    onMouseDown={onMouseDown}
-                    onMouseMove={onMouseMove}
-                    onMouseUp={onMouseUp}
+                    {/* Image container — scroll zoom + drag pan + pinch zoom */}
+                    <Box
+                    onWheel={handlePreviewWheel}
+                    onWheelCapture={handlePreviewWheel}
+                      onMouseDown={onMouseDown}
+                      onMouseMove={onMouseMove}
+                      onMouseUp={onMouseUp}
                     onMouseLeave={onMouseUp}
                     onTouchStart={onTouchStart}
                     onTouchMove={onTouchMove}
@@ -1467,6 +1471,7 @@ function DatePickerBox({ label, value, onChange }) {
                       cursor: isDragging ? "grabbing" : previewZoom > 1 ? "grab" : "zoom-in",
                       userSelect:"none",
                       touchAction:"none",
+                      overscrollBehavior:"none",
                     }}
                   >
                     <Box
