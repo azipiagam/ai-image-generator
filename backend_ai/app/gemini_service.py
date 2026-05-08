@@ -3,7 +3,7 @@ import json
 import uuid
 from typing import Optional
 
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 from google import genai
 from google.genai import types
 
@@ -25,6 +25,15 @@ def parse_resolution(resolution: Optional[str]) -> Optional[tuple[int, int]]:
     return SUPPORTED_RESOLUTIONS.get(value)
 
 
+def _sharpen_after_upscale(img: Image.Image, strong: bool = False) -> Image.Image:
+    radius  = 1.5 if strong else 0.9
+    percent = 160 if strong else 100
+    img = img.filter(ImageFilter.UnsharpMask(radius=radius, percent=percent, threshold=2))
+    factor = 1.45 if strong else 1.15
+    img = ImageEnhance.Sharpness(img).enhance(factor)
+    return img
+
+
 def ensure_output_resolution(
     image: Image.Image,
     target_size: Optional[tuple[int, int]],
@@ -34,27 +43,38 @@ def ensure_output_resolution(
         return image.convert("RGB") if output_format == "JPEG" else image
 
     target_width, target_height = target_size
-    working = image.convert("RGBA")
+    src_w, src_h = image.size
+    if src_w == 0 or src_h == 0:
+        return image.convert("RGB") if output_format == "JPEG" else image
 
-    if working.width == target_width and working.height == target_height:
+    # Scale so the LONGEST dimension of the output matches the LONGEST target dimension.
+    # This fills the target without canvas padding and keeps aspect ratio intact.
+    tgt_long = max(target_width, target_height)
+    src_long = max(src_w, src_h)
+    ratio = tgt_long / src_long
+
+    if ratio <= 1.0:
+        # Already large enough — just convert
+        working = image.convert("RGBA")
         return working.convert("RGB") if output_format == "JPEG" else working
 
-    resized = ImageOps.contain(
-        working,
-        (target_width, target_height),
-        method=RESAMPLING_LANCZOS,
-    )
+    new_w = round(src_w * ratio)
+    new_h = round(src_h * ratio)
 
-    # Beri sedikit sharpen setelah upscale supaya hasil export besar tidak terlalu lembek.
-    if resized.width < target_width or resized.height < target_height:
-        resized = resized.filter(ImageFilter.UnsharpMask(radius=1.4, percent=115, threshold=2))
+    working = image.convert("RGBA")
 
-    canvas = Image.new("RGBA", (target_width, target_height), (255, 255, 255, 0))
-    offset_x = (target_width - resized.width) // 2
-    offset_y = (target_height - resized.height) // 2
-    canvas.paste(resized, (offset_x, offset_y), resized)
+    # Multi-step upscaling: first double, then final step.
+    # Each intermediate step has a light sharpen pass to preserve detail.
+    if ratio > 2.0:
+        mid_w = min(src_w * 2, new_w)
+        mid_h = min(src_h * 2, new_h)
+        working = working.resize((mid_w, mid_h), RESAMPLING_LANCZOS)
+        working = _sharpen_after_upscale(working, strong=False)
 
-    return canvas.convert("RGB") if output_format == "JPEG" else canvas
+    working = working.resize((new_w, new_h), RESAMPLING_LANCZOS)
+    working = _sharpen_after_upscale(working, strong=True)
+
+    return working.convert("RGB") if output_format == "JPEG" else working
 
 
 def save_inline_image(
@@ -159,10 +179,8 @@ def build_generation_prompt(
     if parsed_resolution:
         width, height = parsed_resolution
         quality_instructions.append(
-            f"Compose the final image for a crisp high-detail {width}x{height} export."
-        )
-        quality_instructions.append(
-            "Keep edges clean, avoid blur, and preserve fine texture detail."
+            f"Output at maximum sharpness for a {width}x{height} high-resolution export. "
+            f"Crisp edges, sharp fine texture, zero blur, professional product quality."
         )
 
     quality_suffix = f" {' '.join(quality_instructions)}" if quality_instructions else ""
@@ -248,8 +266,14 @@ def upscale_image(
         new_w = int(new_w * ratio)
         new_h = int(new_h * ratio)
 
+    if scale_factor > 2:
+        mid_w = min(img.width * 2, new_w)
+        mid_h = min(img.height * 2, new_h)
+        img = img.resize((mid_w, mid_h), RESAMPLING_LANCZOS)
+        img = _sharpen_after_upscale(img, strong=False)
+
     img = img.resize((new_w, new_h), RESAMPLING_LANCZOS)
-    img = img.filter(ImageFilter.UnsharpMask(radius=1.2, percent=120, threshold=2))
+    img = _sharpen_after_upscale(img, strong=True)
 
     filename = f"{filename_prefix}upscale_{uuid.uuid4().hex}{ext}"
     file_path = OUTPUT_DIR / filename
