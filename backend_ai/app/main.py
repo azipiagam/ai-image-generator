@@ -325,9 +325,8 @@ async def upscale_image_endpoint(
     if scale not in ("2x", "4x"):
         scale = "2x"
 
-    user_dept    = get_dept_category(current_user)
-    dept_api_key = get_api_key_for_dept(user_dept)
-    dept_prefix  = get_filename_prefix_for_dept(user_dept)
+    user_dept   = get_dept_category(current_user)
+    dept_prefix = get_filename_prefix_for_dept(user_dept)
 
     user_display_name = (
         current_user.get("name") or
@@ -338,18 +337,11 @@ async def upscale_image_endpoint(
         ""
     ).strip()
 
-    if not dept_api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="API key untuk departmen Anda belum dikonfigurasi. Hubungi admin IT.",
-        )
-
     try:
         result = upscale_image(
             image_bytes=image_bytes,
             mime_type=mime_type,
             scale=scale,
-            api_key=dept_api_key,
             filename_prefix=dept_prefix,
             created_by=user_display_name,
         )
@@ -361,7 +353,6 @@ async def upscale_image_endpoint(
             "api_image_url": f"/api/image/{result['filename']}",
             "width":        result["width"],
             "height":       result["height"],
-            "ai_enhanced":  result.get("ai_enhanced", False),
             "scale":        result.get("scale", scale),
         }
     except HTTPException:
