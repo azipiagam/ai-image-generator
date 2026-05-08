@@ -312,15 +312,30 @@
 
   /* ══════════════════ MAIN COMPONENT ══════════════════ */
   /* ── DatePickerBox: klik di mana saja → buka kalender (desktop & mobile) ── */
-  function DatePickerBox({ label, value, onChange }) {
-    return (
-      <Box
-        sx={{
-          position:"relative",
-          minWidth:{ xs:"100%", sm:200 },
-          width:{ xs:"100%", sm:"auto" },
-        }}
-      >
+function DatePickerBox({ label, value, onChange }) {
+  const inputRef = useRef(null);
+
+  const openDatePicker = () => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+    input.click();
+  };
+
+  return (
+    <Box
+      sx={{
+        position:"relative",
+        minWidth:{ xs:"100%", sm:200 },
+        width:{ xs:"100%", sm:"auto" },
+      }}
+    >
         {/* Floating label — di atas segalanya */}
         <Typography
           component="span"
@@ -344,14 +359,16 @@
 
         {/* Input overlay — di bawah display secara visual (zIndex:1) tapi full area klikable */}
         <input
+          ref={inputRef}
           type="date"
           value={value}
           onChange={e => onChange(e.target.value)}
+          tabIndex={-1}
           style={{
             position:"absolute",
             top:0, left:0,
-            width:"100%",
-            height:"100%",
+            width:1,
+            height:1,
             opacity:0,
             cursor:"pointer",
             border:"none",
@@ -360,13 +377,23 @@
             MozAppearance:"none",
             appearance:"none",
             boxSizing:"border-box",
+            pointerEvents:"none",
             zIndex:1,
             fontSize:"16px",
           }}
         />
 
-        {/* Display box — di atas input (zIndex:3), pointerEvents none agar klik tembus ke input */}
+        {/* Display box — seluruh area klik langsung buka date picker */}
         <Box
+          role="button"
+          tabIndex={0}
+          onClick={openDatePicker}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openDatePicker();
+            }
+          }}
           sx={{
             position:"relative",
             zIndex:3,
@@ -378,8 +405,16 @@
             gap:"8px",
             px:"12px",
             height:52,
-            pointerEvents:"none",
+            cursor:"pointer",
+            outline:"none",
             transition:"border-color 0.2s",
+            "&:hover":{
+              borderColor:"rgba(35,57,113,0.45)",
+            },
+            "&:focus-visible":{
+              borderColor:"#233971",
+              boxShadow:"0 0 0 3px rgba(35,57,113,0.12)",
+            },
           }}
         >
           <CalendarMonthRoundedIcon sx={{ fontSize:18, color:"#5b7ec7", flexShrink:0 }}/>
@@ -1120,7 +1155,7 @@
 
                         {(item.createdBy || item.username || item.user) && (
                           <Typography sx={{ ...F, color:"#475569", fontSize:"0.70rem", fontWeight:600, mb:"8px" }}>
-                            By {item.createdBy || item.username || item.user}
+                            Created by {item.createdBy || item.username || item.user}
                           </Typography>
                         )}
 
@@ -1468,7 +1503,7 @@
                     </Typography>
                     {(previewItem.createdBy || previewItem.username || previewItem.user) && (
                       <Typography sx={{ ...F, color:"#475569", fontSize:"0.82rem", fontWeight:600, mb:1.2 }}>
-                        By {previewItem.createdBy || previewItem.username || previewItem.user}
+                        Created by {previewItem.createdBy || previewItem.username || previewItem.user}
                       </Typography>
                     )}
                     {previewItem.prompt ? (

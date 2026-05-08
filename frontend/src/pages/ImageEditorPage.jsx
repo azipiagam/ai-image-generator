@@ -468,6 +468,7 @@ function PreviewBox({ src, alt, aspectRatio, minHeight = 240, onPreview }) {
       variant="outlined"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
+      onWheel={(e) => e.preventDefault()}
       sx={{
         minHeight,
         borderRadius: "18px",
@@ -608,6 +609,7 @@ function BatchCard({ item, index, aspectRatio, onPreview, onDownload, F }) {
             cursor: "zoom-in",
           }}
           onClick={onPreview}
+          onWheel={(e) => e.preventDefault()}
         >
           <Box
             component="img"
@@ -1805,6 +1807,7 @@ export default function ImageEditorPage() {
                   <Paper
                     variant="outlined"
                     onClick={() => primaryPreviewUrl && openLightbox(primaryPreviewUrl)}
+                    onWheel={(e) => e.preventDefault()}
                     sx={{
                       minHeight: 240,
                       borderRadius: "18px",
@@ -1857,6 +1860,7 @@ export default function ImageEditorPage() {
                         <Box
                           key={`${item.file.name}-${idx}`}
                           onClick={() => openLightbox(item.url)}
+                          onWheel={(e) => e.preventDefault()}
                           sx={{
                             width: 78,
                             height: 78,
@@ -1905,6 +1909,7 @@ export default function ImageEditorPage() {
                         <Box
                           key={`ref-preview-${item.file.name}-${idx}`}
                           onClick={() => openLightbox(item.url)}
+                          onWheel={(e) => e.preventDefault()}
                           sx={{
                             position: "relative",
                             width: 72,
