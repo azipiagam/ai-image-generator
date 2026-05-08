@@ -958,6 +958,7 @@ export default function ImageEditorPage() {
   const [loading, setLoading] = useState(false);
   const [resultUrl, setResultUrl] = useState("");
   const [batchResults, setBatchResults] = useState([]);
+  const [resultMeta, setResultMeta] = useState(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccess] = useState("");
   const [copied, setCopied] = useState(false);
@@ -968,16 +969,26 @@ export default function ImageEditorPage() {
   const [batchCount, setBatchCount] = useState(1);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState("");
+  const [lightboxMeta, setLightboxMeta] = useState(null);
 
   // ── NEW: reference images state
   const [refFiles, setRefFiles] = useState([]);
   const [dragActiveRef, setDragActiveRef] = useState(false);
 
-  const openLightbox = (src) => {
-    setLightboxSrc(src);
+  const openLightbox = (payload) => {
+    if (typeof payload === "string") {
+      setLightboxSrc(payload);
+      setLightboxMeta(null);
+    } else {
+      setLightboxSrc(payload?.imageUrl || "");
+      setLightboxMeta(payload || null);
+    }
     setLightboxOpen(true);
   };
-  const closeLightbox = () => setLightboxOpen(false);
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setLightboxMeta(null);
+  };
 
   const previewUrls = useMemo(() => files.map((f) => ({ file: f, url: URL.createObjectURL(f) })), [files]);
 
@@ -1035,25 +1046,52 @@ export default function ImageEditorPage() {
     return `${origin}/${url}`;
   };
 
-  const extractImageUrls = (data) => {
+  const extractImageResults = (data) => {
     if (!data) return [];
 
-    if (Array.isArray(data?.image_urls)) {
-      return data.image_urls.filter(Boolean).map(normalizeUrl);
-    }
-
     if (Array.isArray(data?.images)) {
-      return data.images
-        .map((i) => (typeof i === "string" ? i : i?.image_url || i?.url || i?.filename ? i?.image_url || i?.url || `/image/${i?.filename}` : ""))
-        .filter(Boolean)
-        .map(normalizeUrl);
+      return data
+        .images
+        .map((item, index) => {
+          if (typeof item === "string") {
+            return {
+              id: `result-${index}-${Date.now()}`,
+              imageUrl: normalizeUrl(item),
+              downloadUrl: normalizeUrl(item),
+              fileName: `generated-${index + 1}.png`,
+              width: null,
+              height: null,
+            };
+          }
+
+          const rawUrl = item?.api_image_url || item?.image_url || item?.url || (item?.filename ? `/api/image/${item.filename}` : "");
+          if (!rawUrl) return null;
+
+          return {
+            id: item?.filename || `result-${index}-${Date.now()}`,
+            imageUrl: normalizeUrl(item?.image_url || item?.api_image_url || rawUrl),
+            downloadUrl: normalizeUrl(rawUrl),
+            fileName: item?.filename || `generated-${index + 1}.png`,
+            width: item?.width ?? null,
+            height: item?.height ?? null,
+            requestedResolution: item?.requested_resolution || "original",
+          };
+        })
+        .filter(Boolean);
     }
 
-    if (data?.image_url) return [normalizeUrl(data.image_url)];
-    if (data?.url) return [normalizeUrl(data.url)];
-    if (data?.filename) return [normalizeUrl(`/image/${data.filename}`)];
+    const rawUrl = data?.api_image_url || data?.image_url || data?.url || (data?.filename ? `/api/image/${data.filename}` : "");
+    if (!rawUrl) return [];
 
-    return [];
+    return [{
+      id: data?.filename || `result-${Date.now()}`,
+      imageUrl: normalizeUrl(data?.image_url || data?.api_image_url || rawUrl),
+      downloadUrl: normalizeUrl(rawUrl),
+      fileName: data?.filename || `generated-${Date.now()}.png`,
+      width: data?.width ?? null,
+      height: data?.height ?? null,
+      requestedResolution: data?.requested_resolution || "original",
+    }];
   };
 
   const prepareFiles = (incoming) => {
@@ -1074,6 +1112,7 @@ export default function ImageEditorPage() {
     setFiles(valid);
     setResultUrl("");
     setBatchResults([]);
+    setResultMeta(null);
     setError("");
     setSuccess("");
     setBatchCount((prev) => (valid.length === 1 ? (prev > 4 ? 4 : prev || 1) : valid.length));
@@ -1120,6 +1159,7 @@ export default function ImageEditorPage() {
     setLoading(false);
     setResultUrl("");
     setBatchResults([]);
+    setResultMeta(null);
     setError("");
     setSuccess("");
     setCopied(false);
@@ -1135,12 +1175,16 @@ export default function ImageEditorPage() {
     if (refFileInputRef.current) refFileInputRef.current.value = "";
   };
 
-  const createResultItem = ({ imageUrl, fileName, promptText, variantIndex }) => ({
+  const createResultItem = ({ imageUrl, downloadUrl, fileName, promptText, variantIndex, width = null, height = null, requestedResolution = "original" }) => ({
     id: `${Date.now()}-${fileName}-${variantIndex}-${Math.random()}`,
     imageUrl,
+    downloadUrl: downloadUrl || imageUrl,
     fileName,
     prompt: promptText,
     variantIndex,
+    width,
+    height,
+    requestedResolution,
   });
 
   const saveToGallery = ({ imageUrl, promptText, originalFile }) => {
@@ -1187,7 +1231,7 @@ export default function ImageEditorPage() {
       headers: { "Content-Type": "multipart/form-data" },
     });
 
-    return extractImageUrls(res?.data);
+    return extractImageResults(res?.data);
   };
 
   const handleSubmit = async () => {
@@ -1207,71 +1251,81 @@ export default function ImageEditorPage() {
       setSuccess("");
       setResultUrl("");
       setBatchResults([]);
+      setResultMeta(null);
 
       const fp = buildFinalPrompt();
       const results = [];
 
       if (files.length === 1) {
         const src = files[0];
-        let urls = await requestSingleEdit({
+        let generatedItems = await requestSingleEdit({
           file: src,
           finalPrompt: fp,
           requestedBatch: batchCount,
         });
 
-        if (!urls.length) throw new Error("image_url tidak ditemukan.");
+        if (!generatedItems.length) throw new Error("image_url tidak ditemukan.");
 
-        if (urls.length === 1 && batchCount > 1) {
-          const fallbackUrls = [urls[0]];
+        if (generatedItems.length === 1 && batchCount > 1) {
+          const fallbackItems = [generatedItems[0]];
           for (let i = 1; i < batchCount; i++) {
             const retry = await requestSingleEdit({
               file: src,
               finalPrompt: fp,
               requestedBatch: 1,
             });
-            if (retry[0]) fallbackUrls.push(retry[0]);
+            if (retry[0]) fallbackItems.push(retry[0]);
           }
-          urls = fallbackUrls;
+          generatedItems = fallbackItems;
         }
 
-        urls.slice(0, batchCount).forEach((u, idx) => {
+        generatedItems.slice(0, batchCount).forEach((item, idx) => {
           results.push(
             createResultItem({
-              imageUrl: u,
+              imageUrl: item.imageUrl,
+              downloadUrl: item.downloadUrl,
               fileName:
-                batchCount > 1
+                item.fileName || (batchCount > 1
                   ? `${src.name.replace(/(\.[^.]+)$/u, "") || src.name}-varian-${idx + 1}.png`
-                  : src.name,
+                  : src.name),
               promptText: fp,
               variantIndex: idx + 1,
+              width: item.width,
+              height: item.height,
+              requestedResolution: item.requestedResolution,
             })
           );
-          saveToGallery({ imageUrl: u, promptText: fp, originalFile: src });
+          saveToGallery({ imageUrl: item.imageUrl, promptText: fp, originalFile: src });
         });
       } else {
         for (const cf of files) {
-          const urls = await requestSingleEdit({
+          const generatedItems = await requestSingleEdit({
             file: cf,
             finalPrompt: fp,
             requestedBatch: 1,
           });
 
-          if (!urls.length) throw new Error(`image_url tidak ditemukan untuk file ${cf.name}.`);
+          if (!generatedItems.length) throw new Error(`image_url tidak ditemukan untuk file ${cf.name}.`);
 
           results.push(
             createResultItem({
-              imageUrl: urls[0],
-              fileName: cf.name,
+              imageUrl: generatedItems[0].imageUrl,
+              downloadUrl: generatedItems[0].downloadUrl,
+              fileName: generatedItems[0].fileName || cf.name,
               promptText: fp,
               variantIndex: 1,
+              width: generatedItems[0].width,
+              height: generatedItems[0].height,
+              requestedResolution: generatedItems[0].requestedResolution,
             })
           );
-          saveToGallery({ imageUrl: urls[0], promptText: fp, originalFile: cf });
+          saveToGallery({ imageUrl: generatedItems[0].imageUrl, promptText: fp, originalFile: cf });
         }
       }
 
       setBatchResults(results);
       setResultUrl(results[0]?.imageUrl || "");
+      setResultMeta(results[0] || null);
       setSuccess(
         files.length === 1 && batchCount > 1
           ? `Berhasil generate ${results.length} gambar.`
@@ -1286,7 +1340,9 @@ export default function ImageEditorPage() {
     }
   };
 
-  const handleDownloadSingle = async (url, filename = `edited-${Date.now()}.png`) => {
+  const handleDownloadSingle = async (target, fallbackFilename = `edited-${Date.now()}.png`) => {
+    const url = typeof target === "string" ? target : target?.downloadUrl || target?.imageUrl;
+    const filename = typeof target === "string" ? fallbackFilename : target?.fileName || fallbackFilename;
     if (!url) return;
     try {
       const response = await fetch(url);
@@ -1358,12 +1414,12 @@ export default function ImageEditorPage() {
     <Box sx={{ position: "relative", ...F }}>
       <FontStyle />
 
-      <Lightbox
-        open={lightboxOpen}
-        src={lightboxSrc}
-        onClose={closeLightbox}
-        onDownload={() => handleDownloadSingle(lightboxSrc, `preview-${Date.now()}.png`)}
-      />
+        <Lightbox
+          open={lightboxOpen}
+          src={lightboxSrc}
+          onClose={closeLightbox}
+          onDownload={() => handleDownloadSingle(lightboxMeta || resultMeta || lightboxSrc, `preview-${Date.now()}.png`)}
+        />
 
       <Stack spacing={4}>
         <Stack direction={{ xs: "column", lg: "row" }} spacing={3} alignItems="stretch">
@@ -1997,8 +2053,14 @@ export default function ImageEditorPage() {
                     alt="After"
                     aspectRatio={aspectRatio}
                     minHeight={240}
-                    onPreview={() => resultUrl && openLightbox(resultUrl)}
+                    onPreview={() => resultUrl && openLightbox(resultMeta || resultUrl)}
                   />
+
+                  {resultMeta?.width && resultMeta?.height && (
+                    <Typography sx={{ ...F, mt: 1, fontSize: "0.76rem", color: "#64748b", fontWeight: 600 }}>
+                      Ukuran hasil: {resultMeta.width} x {resultMeta.height}px
+                    </Typography>
+                  )}
 
                   {!resultUrl && loading && (
                     <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
@@ -2044,8 +2106,8 @@ export default function ImageEditorPage() {
                           item={item}
                           index={idx}
                           aspectRatio={aspectRatio}
-                          onPreview={() => openLightbox(item.imageUrl)}
-                          onDownload={() => handleDownloadSingle(item.imageUrl, `edited-${idx + 1}-${item.fileName || Date.now()}.png`)}
+                          onPreview={() => openLightbox(item)}
+                          onDownload={() => handleDownloadSingle(item, `edited-${idx + 1}-${item.fileName || Date.now()}.png`)}
                           F={F}
                         />
                       ))}
@@ -2057,7 +2119,7 @@ export default function ImageEditorPage() {
                   variant="contained"
                   size="large"
                   startIcon={<DownloadIcon />}
-                  onClick={() => handleDownloadSingle(resultUrl, `edited-${Date.now()}.png`)}
+                  onClick={() => handleDownloadSingle(resultMeta || resultUrl, `edited-${Date.now()}.png`)}
                   disabled={!resultUrl}
                   fullWidth
                   sx={{

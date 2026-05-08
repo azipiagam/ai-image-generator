@@ -64,7 +64,7 @@ def save_inline_image(
     created_by: str = "",
     prompt: str = "",
     requested_resolution: Optional[str] = None,
-) -> str:
+) -> dict:
     ext = ".png"
     output_format = "PNG"
     if "jpeg" in mime_type or "jpg" in mime_type:
@@ -104,7 +104,12 @@ def save_inline_image(
     except Exception:
         pass
 
-    return filename
+    return {
+        "filename": filename,
+        "width": image.width,
+        "height": image.height,
+        "requested_resolution": requested_resolution or "original",
+    }
 
 
 def extract_image_filename_from_response(
@@ -113,7 +118,7 @@ def extract_image_filename_from_response(
     created_by: str = "",
     prompt: str = "",
     requested_resolution: Optional[str] = None,
-) -> Optional[str]:
+) -> Optional[dict]:
     candidates = getattr(response, "candidates", None) or []
     if not candidates:
         return None
@@ -226,7 +231,7 @@ def edit_image_with_gemini(
         ),
     )
 
-    filename = extract_image_filename_from_response(
+    image_info = extract_image_filename_from_response(
         response,
         filename_prefix,
         created_by=created_by,
@@ -241,6 +246,9 @@ def edit_image_with_gemini(
         text_output = ""
 
     return {
-        "filename": filename,
+        "filename": image_info["filename"] if image_info else None,
+        "width": image_info["width"] if image_info else None,
+        "height": image_info["height"] if image_info else None,
+        "requested_resolution": image_info["requested_resolution"] if image_info else (requested_resolution or "original"),
         "text_output": text_output,
     }

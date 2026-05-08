@@ -291,6 +291,9 @@ async def edit_image(
             "filename":     result["filename"],
             "image_url":    f"/image/{result['filename']}",
             "api_image_url": f"/api/image/{result['filename']}",
+            "width":        result.get("width"),
+            "height":       result.get("height"),
+            "requested_resolution": result.get("requested_resolution"),
             "text_output":  result.get("text_output"),
         }
     except HTTPException:
