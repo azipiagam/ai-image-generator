@@ -45,7 +45,7 @@ export default function Layout({ children }) {
 
       <div className="dashboard-stage">
         <Header
-          title="Framelens"
+          title="Framelenss"
           subtitle=""
           breadcrumb={breadcrumbItems}
           toolbarActions={pageToolbarActions}
